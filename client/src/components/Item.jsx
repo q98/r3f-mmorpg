@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
 import { mapAtom } from "./SocketManager";
 
-export const Item = ({ item }) => {
+export const Item = ({ item, onClick, isDragging }) => {
   const { name, gridPosition, size, rotation } = item;
   const [map] = useAtom(mapAtom);
   const { scene } = useGLTF(`/models/items/${name}.glb`);
@@ -15,6 +15,7 @@ export const Item = ({ item }) => {
   return (
     <primitive
       object={clone}
+
       position={[
         width / map.gridDivision / 2 + gridPosition[0] / map.gridDivision,
         0,

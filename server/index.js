@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import pathfinding from "pathfinding";
 
 const io = new Server({
   cors: {
@@ -7,428 +8,683 @@ const io = new Server({
 });
 
 io.listen(3001);
-
+const dynamicItems = []
 const characters = [];
-
 const items = {
-  washer: {
-    name: "washer",
-    size: [2, 2],
-  },
-  toiletSquare: {
-    name: "toiletSquare",
-    size: [2, 2],
-  },
-  trashcan: {
-    name: "trashcan",
+  vela_5: {
+    name: "Vela_5",
     size: [1, 1],
+    walkable: true
+  }, vela_6: {
+    name: "Vela_6",
+    size: [1, 1],
+    walkable: true
   },
-  bathroomCabinetDrawer: {
-    name: "bathroomCabinetDrawer",
-    size: [2, 2],
+  vela_4: {
+    name: "Vela_4",
+    size: [1, 1],
+    walkable: true
   },
-  bathtub: {
-    name: "bathtub",
-    size: [4, 2],
+  vela_3: {
+    name: "Vela_3",
+    size: [1, 1],
+    walkable: true
   },
-  bathroomMirror: {
-    name: "bathroomMirror",
-    size: [2, 1],
-    wall: true,
+  vela_2: {
+    name: "Vela_2",
+    size: [1, 1],
+    walkable: true
   },
-  bathroomCabinet: {
-    name: "bathroomCabinet",
-    size: [2, 1],
-    wall: true,
+  vela_1: {
+    name: "Vela_1",
+    size: [1, 1],
+    walkable: true
   },
-  bathroomSink: {
-    name: "bathroomSink",
-    size: [2, 2],
+  bone_3: {
+    name: "Bone_3",
+    size: [1, 1],
+    walkable: true
   },
-  showerRound: {
-    name: "showerRound",
-    size: [2, 2],
+  bone_2: {
+    name: "Bone_2",
+    size: [1, 1],
+    walkable: true
   },
-  tableCoffee: {
-    name: "tableCoffee",
-    size: [4, 2],
+  bone_1: {
+    name: "Bone_1",
+    size: [1, 1],
+    walkable: true
   },
-  loungeSofaCorner: {
-    name: "loungeSofaCorner",
-    size: [5, 5],
+  lantern: {
+    name: "Lantern",
+    size: [1, 1]
   },
-  bear: {
-    name: "bear",
-    size: [2, 1],
-    wall: true,
+  base_Priedra_1x1: {
+    name: "Base_Priedra_1x1",
+    size: [1, 1]
   },
-  loungeSofaOttoman: {
-    name: "loungeSofaOttoman",
-    size: [2, 2],
-  },
-  tableCoffeeGlassSquare: {
-    name: "tableCoffeeGlassSquare",
-    size: [2, 2],
-  },
-  loungeDesignSofaCorner: {
-    name: "loungeDesignSofaCorner",
-    size: [5, 5],
-  },
-  loungeDesignSofa: {
-    name: "loungeDesignSofa",
-    size: [5, 2],
-  },
-  loungeSofa: {
-    name: "loungeSofa",
-    size: [5, 2],
-  },
-  bookcaseOpenLow: {
-    name: "bookcaseOpenLow",
-    size: [2, 1],
-  },
-  kitchenBar: {
-    name: "kitchenBar",
-    size: [2, 1],
-  },
-  bookcaseClosedWide: {
-    name: "bookcaseClosedWide",
-    size: [3, 1],
-  },
-  bedSingle: {
-    name: "bedSingle",
-    size: [3, 5],
+  base_Priedra_2x2: {
+    name: "Base_Priedra_2x2",
+    size: [2, 2]
   },
   bench: {
-    name: "bench",
-    size: [2, 1],
+    name: "Bench",
+    size: [2, 1]
   },
-  bedDouble: {
-    name: "bedDouble",
-    size: [5, 5],
+  bench_Decorated: {
+    name: "Bench_Decorated",
+    size: [2, 1]
   },
-  benchCushionLow: {
-    name: "benchCushionLow",
-    size: [2, 1],
+  columna_Velas_2x2: {
+    name: "Columna_Velas_2x2",
+    size: [2, 2]
   },
-  loungeChair: {
-    name: "loungeChair",
+  three_Yellow_3: {
+    name: "Three_Yellow_3",
+    size: [1, 1]
+  },
+  three_Yellow_2: {
+    name: "Three_Yellow_2",
+    size: [1, 1]
+  },
+  three_Yellow_1: {
+    name: "Three_Yellow_1",
+    size: [1, 1]
+  },
+  three_Orange_3: {
+    name: "Three_Orange_3",
+    size: [1, 1]
+  },
+  three_Orange_2: {
+    name: "Three_Orange_2",
+    size: [1, 1]
+  },
+  three_Orange_1: {
+    name: "Three_Orange_1",
+    size: [1, 1]
+  },
+  gate_Valla: {
+    name: "Gate_Valla",
+    size: [1, 4]
+  },
+  gate_Valla_2: {
+    name: "Gate_Valla_2",
+    size: [4, 1]
+  },
+  gate_Empty: {
+    name: "Gate_Empty",
+    size: [4, 1],
+    walkable: true
+  },
+  post_Skull: {
+    name: "Post_Skull",
+    size: [1, 1]
+  },
+  post_Lantern: {
+    name: "Post_Lantern",
+    size: [1, 1]
+  },
+  post_Wood: {
+    name: "Post_Wood",
+    size: [1, 1]
+  },
+  lapida_1: {
+    name: "Lapida_1",
+    size: [2, 1]
+  },
+  lapida_2: {
+    name: "Lapida_2",
+    size: [2, 1]
+  },
+  lapida_3: {
+    name: "Lapida_3",
+    size: [2, 1]
+  },
+  lapida_4: {
+    name: "Lapida_4",
+    size: [2, 1]
+  },
+  three_Death_3: {
+    name: "Three_Death_3",
+    size: [1, 1],
+  },
+  three_Death_2: {
+    name: "Three_Death_2",
+    size: [1, 1],
+  },
+  three_Death_1: {
+    name: "Three_Death_1",
+    size: [1, 1],
+  },
+  floor_Stones_1: {
+    name: "Floor_Stones_1",
     size: [2, 2],
+    walkable: true
   },
-  cabinetBedDrawer: {
-    name: "cabinetBedDrawer",
-    size: [1, 1],
-  },
-  cabinetBedDrawerTable: {
-    name: "cabinetBedDrawerTable",
-    size: [1, 1],
-  },
-  table: {
-    name: "table",
-    size: [4, 2],
-  },
-  tableCrossCloth: {
-    name: "tableCrossCloth",
-    size: [4, 2],
-  },
-  plant: {
-    name: "plant",
-    size: [1, 1],
-  },
-  plantSmall: {
-    name: "plantSmall",
-    size: [1, 1],
-  },
-  rugRounded: {
-    name: "rugRounded",
-    size: [6, 4],
-    walkable: true,
-  },
-  rugRound: {
-    name: "rugRound",
-    size: [4, 4],
-    walkable: true,
-  },
-  rugSquare: {
-    name: "rugSquare",
-    size: [4, 4],
-    walkable: true,
-  },
-  rugRectangle: {
-    name: "rugRectangle",
-    size: [8, 4],
-    walkable: true,
-  },
-  televisionVintage: {
-    name: "televisionVintage",
-    size: [4, 2],
-  },
-  televisionModern: {
-    name: "televisionModern",
-    size: [4, 2],
-  },
-  kitchenCabinetCornerRound: {
-    name: "kitchenCabinetCornerRound",
+  floor_Stones_2: {
+    name: "Floor_Stones_2",
     size: [2, 2],
+    walkable: true
   },
-  kitchenCabinetCornerInner: {
-    name: "kitchenCabinetCornerInner",
+  floor_Stones_3: {
+    name: "Floor_Stones_3",
     size: [2, 2],
+    walkable: true
   },
-  kitchenCabinet: {
-    name: "kitchenCabinet",
+  floor_Stones_4: {
+    name: "Floor_Stones_4",
     size: [2, 2],
+    walkable: true
   },
-  kitchenBlender: {
-    name: "kitchenBlender",
-    size: [1, 1],
+  valla_Rota: {
+    name: "Valla_Rota",
+    size: [4, 1]
   },
-  dryer: {
-    name: "dryer",
-    size: [2, 2],
+  valla: {
+    name: "Valla",
+    size: [4, 1]
   },
-  chairCushion: {
-    name: "chairCushion",
-    size: [1, 1],
+  valla_Piedra_Rota: {
+    name: "Valla_Piedra_Rota",
+    size: [4, 1]
   },
-  chair: {
-    name: "chair",
-    size: [1, 1],
+  valla_Piedra: {
+    name: "Valla_Piedra",
+    size: [4, 1]
   },
-  deskComputer: {
-    name: "deskComputer",
-    size: [3, 2],
+  crypt: {
+    name: "Crypt",
+    size: [6, 8]
   },
-  desk: {
-    name: "desk",
-    size: [3, 2],
+  crypt2: {
+    name: "Crypt2",
+    size: [6, 8]
   },
-  chairModernCushion: {
-    name: "chairModernCushion",
-    size: [1, 1],
-  },
-  chairModernFrameCushion: {
-    name: "chairModernFrameCushion",
-    size: [1, 1],
-  },
-  kitchenMicrowave: {
-    name: "kitchenMicrowave",
-    size: [1, 1],
-  },
-  coatRackStanding: {
-    name: "coatRackStanding",
-    size: [1, 1],
-  },
-  kitchenSink: {
-    name: "kitchenSink",
-    size: [2, 2],
-  },
-  lampRoundFloor: {
-    name: "lampRoundFloor",
-    size: [1, 1],
-  },
-  lampRoundTable: {
-    name: "lampRoundTable",
-    size: [1, 1],
-  },
-  lampSquareFloor: {
-    name: "lampSquareFloor",
-    size: [1, 1],
-  },
-  lampSquareTable: {
-    name: "lampSquareTable",
-    size: [1, 1],
-  },
-  toaster: {
-    name: "toaster",
-    size: [1, 1],
-  },
-  kitchenStove: {
-    name: "kitchenStove",
-    size: [2, 2],
-  },
-  laptop: {
-    name: "laptop",
-    size: [1, 1],
-  },
-  radio: {
-    name: "radio",
-    size: [1, 1],
-  },
-  speaker: {
-    name: "speaker",
-    size: [1, 1],
-  },
-  speakerSmall: {
-    name: "speakerSmall",
-    size: [1, 1],
-  },
-  stoolBar: {
-    name: "stoolBar",
-    size: [1, 1],
-  },
-  stoolBarSquare: {
-    name: "stoolBarSquare",
-    size: [1, 1],
-  },
-};
+}
 
 const map = {
-  size: [10, 10],
+  size: [21, 14],
   gridDivision: 2,
   items: [
     {
-      ...items.showerRound,
-      gridPosition: [0, 0],
+      ...items.three_Death_3,
+      gridPosition: [4, 10],
     },
     {
-      ...items.toiletSquare,
-      gridPosition: [0, 3],
-      rotation: 1,
+      ...items.three_Death_2,
+      gridPosition: [1, 5],
     },
     {
-      ...items.washer,
-      gridPosition: [5, 0],
+      ...items.three_Death_1,
+      gridPosition: [2, 5],
     },
     {
-      ...items.bathroomSink,
-      gridPosition: [7, 0],
+      ...items.bench,
+      gridPosition: [35, 19],
+    }, {
+      ...items.bench,
+      gridPosition: [32, 19],
+    }, {
+      ...items.floor_Stones_1,
+      gridPosition: [8, 11],
+      rotation: 1
+    }
+    , {
+      ...items.floor_Stones_1,
+      gridPosition: [8, 13],
+      rotation: 1
     },
     {
-      ...items.trashcan,
-      gridPosition: [0, 5],
-      rotation: 1,
+      ...items.floor_Stones_1,
+      gridPosition: [8, 15],
+      rotation: 1
     },
     {
-      ...items.bathroomCabinetDrawer,
-      gridPosition: [3, 0],
+      ...items.floor_Stones_1,
+      gridPosition: [8, 17],
+      rotation: 1
     },
     {
-      ...items.bathtub,
-      gridPosition: [4, 4],
+      ...items.floor_Stones_4,
+      gridPosition: [10, 15],
+      rotation: 1
     },
     {
-      ...items.bathtub,
-      gridPosition: [0, 8],
-      rotation: 3,
+      ...items.floor_Stones_4,
+      gridPosition: [6, 13],
+      rotation: 1
     },
     {
-      ...items.bathroomCabinet,
-      gridPosition: [3, 0],
+      ...items.floor_Stones_1,
+      gridPosition: [10, 17],
+      rotation: 1
     },
     {
-      ...items.bathroomMirror,
-      gridPosition: [0, 8],
-      rotation: 1,
+      ...items.floor_Stones_1,
+      gridPosition: [12, 17],
+      rotation: 1
     },
     {
-      ...items.bathroomMirror,
-      gridPosition: [, 10],
-      rotation: 1,
+      ...items.floor_Stones_1,
+      gridPosition: [12, 19],
+      rotation: 1
     },
     {
-      ...items.tableCoffee,
-      gridPosition: [10, 8],
+      ...items.floor_Stones_1,
+      gridPosition: [12, 21],
+      rotation: 1
     },
     {
-      ...items.rugRectangle,
-      gridPosition: [8, 7],
+      ...items.floor_Stones_2,
+      gridPosition: [12, 23],
+      rotation: 1
     },
     {
-      ...items.loungeSofaCorner,
-      gridPosition: [6, 10],
+      ...items.floor_Stones_3,
+      gridPosition: [12, 25],
+      rotation: 1
     },
     {
-      ...items.bear,
-      gridPosition: [0, 3],
-      rotation: 1,
+      ...items.floor_Stones_4,
+      gridPosition: [12, 27],
+      rotation: 1
     },
     {
-      ...items.plant,
-      gridPosition: [11, 13],
+      ...items.three_Yellow_3,
+      gridPosition: [0, 11]
     },
     {
-      ...items.cabinetBedDrawerTable,
-      gridPosition: [13, 19],
+      ...items.three_Yellow_2,
+      gridPosition: [0, 17]
     },
     {
-      ...items.cabinetBedDrawer,
-      gridPosition: [19, 19],
+      ...items.three_Yellow_1,
+      gridPosition: [0, 13]
     },
     {
-      ...items.bedDouble,
-      gridPosition: [14, 15],
+      ...items.three_Orange_3,
+      gridPosition: [2, 11]
     },
     {
-      ...items.bookcaseClosedWide,
-      gridPosition: [12, 0],
-      rotation: 2,
+      ...items.three_Orange_2,
+      gridPosition: [0, 12]
     },
     {
-      ...items.speaker,
-      gridPosition: [11, 0],
+      ...items.three_Orange_1,
+      gridPosition: [1, 15]
     },
     {
-      ...items.speakerSmall,
-      gridPosition: [15, 0],
+      ...items.valla_Piedra,
+      gridPosition: [3, 6],
+      rotation: 1
     },
     {
-      ...items.loungeChair,
-      gridPosition: [10, 4],
+      ...items.valla_Piedra,
+      gridPosition: [3, 10],
+      rotation: 1
     },
     {
-      ...items.loungeSofaOttoman,
-      gridPosition: [14, 4],
+      ...items.valla_Piedra,
+      gridPosition: [3, 14],
+      rotation: 1
     },
     {
-      ...items.loungeDesignSofa,
-      gridPosition: [18, 0],
-      rotation: 1,
+      ...items.valla_Piedra_Rota,
+      gridPosition: [3, 18],
+      rotation: 1
     },
     {
-      ...items.kitchenCabinetCornerRound,
-      gridPosition: [2, 18],
-      rotation: 2,
+      ...items.post_Lantern,
+      gridPosition: [9, 20]
     },
     {
-      ...items.kitchenCabinetCornerInner,
-      gridPosition: [0, 18],
-      rotation: 2,
+      ...items.valla_Piedra_Rota,
+      gridPosition: [3, 21],
+      rotation: 2
     },
     {
-      ...items.kitchenStove,
-      gridPosition: [0, 16],
-      rotation: 1,
+      ...items.valla_Piedra,
+      gridPosition: [7, 21],
+      rotation: 2
+    }, {
+      ...items.gate_Empty,
+      gridPosition: [11, 21],
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [15, 21],
+      rotation: 2
+    }
+    , {
+      ...items.post_Wood,
+      gridPosition: [15, 20],
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [19, 21],
+      rotation: 2
+    }, {
+      ...items.gate_Valla_2,
+      gridPosition: [27, 21],
+      rotation: 2
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [23, 21],
+      rotation: 2
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [31, 21],
+      rotation: 2
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [35, 21],
+      rotation: 2
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [38, 18],
+      rotation: 1
+    }
+    , {
+      ...items.valla_Piedra,
+      gridPosition: [38, 14],
+      rotation: 1
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [38, 10],
+      rotation: 1
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [38, 6],
+      rotation: 1
     },
     {
-      ...items.dryer,
-      gridPosition: [0, 14],
-      rotation: 1,
+      ...items.three_Yellow_3,
+      gridPosition: [39, 11]
+    }
+    ,
+    {
+      ...items.three_Yellow_1,
+      gridPosition: [39, 13]
     },
     {
-      ...items.lampRoundFloor,
-      gridPosition: [0, 12],
+      ...items.three_Orange_3,
+      gridPosition: [39, 5]
     },
-  ],
-};
+    {
+      ...items.three_Orange_2,
+      gridPosition: [39, 12]
+    },
+    {
+      ...items.three_Orange_1,
+      gridPosition: [39, 15]
+    }
+    ,
+    {
+      ...items.lapida_1,
+      gridPosition: [36, 8]
+    },
+    {
+      ...items.lapida_2,
+      gridPosition: [33, 8]
+    },
+    {
+      ...items.lapida_2,
+      gridPosition: [30, 8]
+    },
+    {
+      ...items.lapida_3,
+      gridPosition: [36, 11]
+    },
+    {
+      ...items.lapida_4,
+      gridPosition: [33, 11]
+    },
+    {
+      ...items.lapida_1,
+      gridPosition: [30, 11]
+    },
+    {
+      ...items.lapida_2,
+      gridPosition: [36, 14]
+    },
+    {
+      ...items.lapida_1,
+      gridPosition: [33, 14]
+    }, {
+      ...items.lapida_1,
+      gridPosition: [30, 14]
+    }, {
+      ...items.vela_5,
+      gridPosition: [11, 11]
+    }, {
+      ...items.vela_6,
+      gridPosition: [10, 12]
+    }, {
+      ...items.vela_6,
+      gridPosition: [7, 12]
+    }, {
+      ...items.post_Lantern,
+      gridPosition: [31, 20]
+    }, {
+      ...items.post_Wood,
+      gridPosition: [26, 20]
+    }
+    , {
+      ...items.post_Skull,
+      gridPosition: [19, 20],
+      rotation: 2
+    }, {
+      ...items.post_Skull,
+      gridPosition: [23, 20],
+      rotation: 2
+    },
+    {
+      ...items.valla_Piedra,
+      gridPosition: [15, 6],
 
+    },
+    {
+      ...items.valla_Rota,
+      gridPosition: [18, 9],
+      rotation: 1
+    },
+    {
+      ...items.valla_Piedra_Rota,
+      gridPosition: [15, 3],
+      rotation: 1
+    },
+    {
+      ...items.valla_Piedra,
+      gridPosition: [12, 3],
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [8, 3],
+    }, {
+      ...items.valla_Piedra,
+      gridPosition: [4, 3],
+    }, {
+      ...items.valla,
+      gridPosition: [18, 12],
+      rotation: 1
+    },
+    {
+      ...items.valla,
+      gridPosition: [18, 17],
+      rotation: 1
+    },
+
+    {
+      ...items.valla_Rota,
+      gridPosition: [24, 10],
+      rotation: 1
+    },
+    {
+      ...items.valla,
+      gridPosition: [24, 13],
+      rotation: 1
+    },
+    {
+      ...items.valla,
+      gridPosition: [24, 17],
+      rotation: 1
+    },
+
+    {
+      ...items.valla_Piedra,
+      gridPosition: [35, 6],
+    },
+    {
+      ...items.valla_Piedra,
+      gridPosition: [31, 6],
+    },
+    {
+      ...items.valla_Piedra,
+      gridPosition: [27, 6],
+    },
+    {
+      ...items.valla_Piedra,
+      gridPosition: [23, 6],
+    },
+    {
+      ...items.gate_Empty,
+      gridPosition: [19, 6],
+    },
+    {
+      ...items.valla_Piedra,
+      gridPosition: [3, 3],
+      rotation: 1
+    },
+    {
+      ...items.crypt2,
+      gridPosition: [6, 5],
+
+    },
+    {
+      ...items.bench_Decorated,
+      gridPosition: [11, 8],
+      rotation: 1
+
+    },
+    {
+      ...items.three_Orange_1,
+      gridPosition: [3, 0],
+    },
+
+    {
+      ...items.three_Orange_2,
+      gridPosition: [5, 1],
+    },
+    {
+      ...items.three_Orange_1,
+      gridPosition: [10, 1],
+    },
+    {
+      ...items.three_Orange_2,
+      gridPosition: [30, 0],
+    },
+    {
+      ...items.three_Orange_3,
+      gridPosition: [39, 1],
+    },
+    {
+      ...items.three_Yellow_1,
+      gridPosition: [4, 2],
+    },
+
+    {
+      ...items.three_Yellow_1,
+      gridPosition: [11, 2],
+    },
+    {
+      ...items.three_Yellow_2,
+      gridPosition: [14, 1],
+    },
+    {
+      ...items.three_Yellow_2,
+      gridPosition: [33, 2],
+    },
+    {
+      ...items.three_Yellow_3,
+      gridPosition: [37, 2],
+    },
+    {
+      ...items.three_Yellow_1,
+      gridPosition: [41, 0],
+    },
+    {
+      ...items.three_Yellow_2,
+      gridPosition: [40, 5],
+    },
+    {
+      ...items.three_Yellow_3,
+      gridPosition: [41, 2],
+    }
+
+  ]
+}
+
+
+
+const grid = new pathfinding.Grid(map.size[0] * map.gridDivision, map.size[1] * map.gridDivision)
+
+const finder = new pathfinding.AStarFinder({
+  allowDiagonal: true,
+  dontCrossCorners: true
+})
+
+const findPath = (start, end) => {
+  const gridClone = grid.clone()
+  const path = finder.findPath(start[0], start[1], end[0], end[1], gridClone)
+  return path
+}
+
+const updateGrid = () => {
+  map.items.forEach((item) => {
+    if (item.walkable || item.wall) return
+
+    // const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0]
+    // const height = !item.rotation === 1 || !item.rotation === 3 ? item.size[0] : item.size[1]
+    const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0];
+    const height = item.rotation === 1 || item.rotation === 3 ? item.size[0] : item.size[1];
+    for (let w = 0; w < width; w++) {
+      for (let h = 0; h < height; h++) {
+        grid.setWalkableAt(
+          item.gridPosition[0] + w,
+          item.gridPosition[1] + h,
+          false
+        )
+      }
+    }
+  })
+}
+updateGrid()
+//console.log(findPath([1, 0], [1, 5]))
+const isInsideMap = (gridPosition) => {
+  return gridPosition[0] / map.gridDivision >= 0 && gridPosition[0] / map.gridDivision <= map.size[0] - 0.5 && gridPosition[1] / map.gridDivision >= 0 && gridPosition[1] / map.gridDivision <= map.size[1] - 0.5
+}
 const generateRandomPosition = () => {
-  return [Math.random() * map.size[0], 0, Math.random() * map.size[1]];
+  //return [20, 15];
+  for (let i = 0; i < 100; i++) {
+    const x = Math.floor(Math.random() * map.size[0] * map.gridDivision)
+    const y = Math.floor(Math.random() * map.size[1] * map.gridDivision)
+    if (grid.isWalkableAt(x, y)) {
+      return [x, y];
+    }
+
+  }
 };
 
-const generateRandomHexColor = () => {
-  return "#" + Math.floor(Math.random() * 16777215).toString(16);
-};
+
 
 io.on("connection", (socket) => {
   console.log("user connected");
 
   characters.push({
+    health: 100,
+    name: socket.id.substring(0, 5),
     id: socket.id,
+    orientation: 8,
     position: generateRandomPosition(),
-    hairColor: generateRandomHexColor(),
-    topColor: generateRandomHexColor(),
-    bottomColor: generateRandomHexColor(),
   });
+  console.log(characters)
 
   socket.emit("hello", {
     map,
@@ -439,12 +695,66 @@ io.on("connection", (socket) => {
 
   io.emit("characters", characters);
 
-  socket.on("move", (position) => {
+  socket.on("move", (from, to) => {
+    // console.log("ask for movement")
     const character = characters.find(
       (character) => character.id === socket.id
     );
-    character.position = position;
-    io.emit("characters", characters);
+    if (!isInsideMap(to)) return
+    if (!grid.isWalkableAt(to[0], to[1])) return
+
+    const path = findPath(from, to);
+    if (!path) {
+      return;
+    }
+    character.position = from;
+    character.attack = null
+    character.path = path;
+    console.log(path)
+
+    //io.emit("characters", characters);
+    io.emit("playerMove", character);
+    character.path = []
+    character.position = to
+
+  });
+  socket.on("serverUpdate", (position) => {
+    // console.log("ask for movement")
+    const character = characters.find(
+      (character) => character.id === socket.id
+    );
+    console.log("serverUpdate" + character.id)
+
+    character.path = []
+    character.position = position
+    console.log("At" + character.position)
+
+  });
+
+  socket.on("attack", (orientation) => {
+
+    const character = characters.find(
+      (character) => character.id === socket.id
+    );
+    console.log(`${character.name} is atacking to ${orientation}`)
+    character.attack = ["attack"]
+    character.path = []
+    //io.emit("characters", characters);
+    io.emit("playerAttack", character);
+    character.attack = null
+
+  });
+
+
+
+  socket.on("playerPivot", (orientation) => {
+    console.log("playerPivoting " + orientation)
+    const character = characters.find(
+      (character) => character.id === socket.id
+    );
+    character.orientation = orientation;
+
+    io.emit("playerPivot", character);
   });
 
   socket.on("disconnect", () => {

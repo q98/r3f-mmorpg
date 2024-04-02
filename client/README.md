@@ -1,10 +1,18 @@
-# r3f-vite-starter
-A boilerplate to build R3F projects
+# git clone <github-url> r3f-mmorpg
 
+# Terminal 1
+r3f-mmorpg>         cd server
+r3f-mmorpg/server>  npm install
+r3f-mmorpg/server>  npm run dev
+
+
+# Terminal 2
+r3f-mmorpg>         cd client
+r3f-mmorpg/client>  npm install
+r3f-mmorpg/client>  npm run dev
 ```
-yarn
-yarn dev
-```
+
+http://localhost:5173/
 
 
-![image](https://user-images.githubusercontent.com/6551176/221732091-23ee52cb-4150-42fa-b998-43628d7a6b0d.png)
+
