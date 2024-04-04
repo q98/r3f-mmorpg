@@ -109,7 +109,8 @@ const items = {
   },
   gate_Valla_2: {
     name: "Gate_Valla_2",
-    size: [4, 1]
+    size: [4, 1],
+    walkable: true
   },
   gate_Empty: {
     name: "Gate_Empty",
@@ -363,6 +364,9 @@ const map = {
       rotation: 2
     }, {
       ...items.gate_Valla_2,
+      id: "Door0001",
+      open: true,
+      walkable: true,
       gridPosition: [27, 21],
       rotation: 2
     }, {
@@ -651,28 +655,63 @@ const updateGrid = () => {
           item.gridPosition[1] + h,
           false
         )
+
       }
     }
+    // if (item.name === "Gate_Valla_2") console.log("Gate_Valla_2 set Walkable?" + item.walkable)
   })
 }
+
 updateGrid()
 //console.log(findPath([1, 0], [1, 5]))
 const isInsideMap = (gridPosition) => {
   return gridPosition[0] / map.gridDivision >= 0 && gridPosition[0] / map.gridDivision <= map.size[0] - 0.5 && gridPosition[1] / map.gridDivision >= 0 && gridPosition[1] / map.gridDivision <= map.size[1] - 0.5
 }
 const generateRandomPosition = () => {
-  //return [20, 15];
-  for (let i = 0; i < 100; i++) {
-    const x = Math.floor(Math.random() * map.size[0] * map.gridDivision)
-    const y = Math.floor(Math.random() * map.size[1] * map.gridDivision)
-    if (grid.isWalkableAt(x, y)) {
-      return [x, y];
-    }
-
-  }
+  return [30, 27];
+  // for (let i = 0; i < 100; i++) {
+  //   const x = Math.floor(Math.random() * map.size[0] * map.gridDivision)
+  //   const y = Math.floor(Math.random() * map.size[1] * map.gridDivision)
+  //   if (grid.isWalkableAt(x, y)) {
+  //     return [x, y];
+  //   }
+  // }
 };
 
+const distanceBetween2Points = (from, to) => {
+  //2D and 3D points
+  if (from.length === 2 && to.length) {
+    return dist3D(from[0], 0, from[1], to[0], 0, to[1])
+  } else if (from.length === 3 && to.length) {
+    return dist3D(from[0], 0, from[1], to[0], 0, to[1])
+  } else {
+    return null
+  }
+}
+const distanceToAnItem = (from, item) => {
+  let distance = 10000
+  let aux = 0
+  //console.log(item)
+  const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0]
+  const height = !item.rotation === 1 || !item.rotation === 3 ? item.size[0] : item.size[1]
+  for (let w = 0; w < width; w++) {
+    for (let h = 0; h < height; h++) {
+      aux = distanceBetween2Points(from, [item.gridPosition[0] + w, item.gridPosition[1] + h])
+      if (aux < distance) {
+        distance = aux
+      }
+    }
+  }
 
+  return distance
+}
+function dist3D(x0, y0, z0, x1, y1, z1) {
+  const deltaX = x1 - x0;
+  const deltaY = y1 - y0;
+  const deltaZ = z1 - z0;
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+  return distance;
+}
 
 io.on("connection", (socket) => {
   console.log("user connected");
@@ -695,6 +734,34 @@ io.on("connection", (socket) => {
 
   io.emit("characters", characters);
 
+  socket.on("actionDoor", (objectId, openStatus) => {
+
+    const item = map.items.find(
+      (item) => item.id === objectId
+    );
+    const character = characters.find(
+      (character) => character.id === socket.id
+    );
+
+    if (distanceToAnItem(character.position, item) <= 1) {
+      item.open = openStatus
+      item.walkable = openStatus
+      const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0]
+      const height = !item.rotation === 1 || !item.rotation === 3 ? item.size[0] : item.size[1]
+      for (let w = 0; w < width; w++) {
+        for (let h = 0; h < height; h++) {
+          grid.setWalkableAt(item.gridPosition[0] + w, item.gridPosition[1] + h, openStatus)
+        }
+      }
+      io.emit("updateAllMap", map);
+
+    }
+
+
+
+
+  });
+  //Moving a player from A to B
   socket.on("move", (from, to) => {
     // console.log("ask for movement")
     const character = characters.find(
@@ -710,7 +777,7 @@ io.on("connection", (socket) => {
     character.position = from;
     character.attack = null
     character.path = path;
-    console.log(path)
+    //console.log(path)
 
     //io.emit("characters", characters);
     io.emit("playerMove", character);
@@ -718,25 +785,14 @@ io.on("connection", (socket) => {
     character.position = to
 
   });
-  socket.on("serverUpdate", (position) => {
-    // console.log("ask for movement")
-    const character = characters.find(
-      (character) => character.id === socket.id
-    );
-    console.log("serverUpdate" + character.id)
 
-    character.path = []
-    character.position = position
-    console.log("At" + character.position)
-
-  });
 
   socket.on("attack", (orientation) => {
 
     const character = characters.find(
       (character) => character.id === socket.id
     );
-    console.log(`${character.name} is atacking to ${orientation}`)
+    //console.log(`${character.name} is atacking to ${orientation}`)
     character.attack = ["attack"]
     character.path = []
     //io.emit("characters", characters);
@@ -748,7 +804,7 @@ io.on("connection", (socket) => {
 
 
   socket.on("playerPivot", (orientation) => {
-    console.log("playerPivoting " + orientation)
+    //console.log("playerPivoting " + orientation)
     const character = characters.find(
       (character) => character.id === socket.id
     );
@@ -766,4 +822,20 @@ io.on("connection", (socket) => {
     );
     io.emit("characters", characters);
   });
+
+  // socket.on("serverUpdate", (position) => {
+  //   // console.log("ask for movement")
+  //   const character = characters.find(
+  //     (character) => character.id === socket.id
+  //   );
+  //   //console.log("serverUpdate" + character.id)
+
+  //   character.path = []
+  //   character.position = position
+  //   //console.log("At" + character.position)
+
+  // });
+
 });
+
+

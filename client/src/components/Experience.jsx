@@ -164,8 +164,8 @@ export const Experience = () => {
         rotation-x={-Math.PI / 2}
         position-y={-0.002}
         onClick={onCharacterMove}
-        onPointerEnter={() => setOnFloor(true)}
-        onPointerLeave={() => setOnFloor(false)}
+        // onPointerEnter={() => setOnFloor(true)}
+        // onPointerLeave={() => setOnFloor(false)}
         position-x={map.size[0] / 2}
         position-z={map.size[1] / 2}
       >

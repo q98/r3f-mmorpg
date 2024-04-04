@@ -10,9 +10,11 @@ export const gridAtom = atom(null)
 
 export const SocketManager = () => {
   const [_characters, setCharacters] = useAtom(charactersAtom);
-  const [_map, setMap] = useAtom(mapAtom);
+  const [map, setMap] = useAtom(mapAtom);
   const [_user, setUser] = useAtom(userAtom);
-  const [_grid, setGrid] = useAtom(gridAtom)
+  const [grid, setGrid] = useAtom(gridAtom)
+
+
   useEffect(() => {
     function onConnect() {
       console.log("connected");
@@ -66,17 +68,17 @@ export const SocketManager = () => {
         })
       })
     }
-    function onServerUpdate(value) {
-      setCharacters((prev) => {
-        return prev.map((character) => {
-          if (character.id === value.id) {
-            return value
-          } else {
-            return character
-          }
-        })
-      })
-    }
+    // function onServerUpdate(value) {
+    //   setCharacters((prev) => {
+    //     return prev.map((character) => {
+    //       if (character.id === value.id) {
+    //         return value
+    //       } else {
+    //         return character
+    //       }
+    //     })
+    //   })
+    // }
     function onPlayerAttack(value) {
       console.log(`receiving a ${value.name} atacking`)
       setCharacters((prev) => {
@@ -90,6 +92,34 @@ export const SocketManager = () => {
       })
     }
 
+    function onItemUpdate(value) {
+      console.log(value)
+      const item = value.items.find(
+        (item) => item.id === "Door0001"
+      );
+      console.log(item)
+      setMap(value);
+      const grid = new pathfinding.Grid(value.size[0] * value.gridDivision, value.size[1] * value.gridDivision)
+      value.items.forEach((item) => {
+        if (item.name === "Gate_Valla_2") console.log("Gate_Valla_2 set Walkable?" + item.walkable)
+        if (item.walkable || item.wall) return
+        const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0]
+        const height = !item.rotation === 1 || !item.rotation === 3 ? item.size[0] : item.size[1]
+        if (item.name === "Gate_Valla_2") {
+          console.log("Gate_Valla_2 height" + height)
+          console.log("Gate_Valla_2 width" + width)
+        }
+        for (let w = 0; w < width; w++) {
+          for (let h = 0; h < height; h++) {
+
+            grid.setWalkableAt(item.gridPosition[0] + w, item.gridPosition[1] + h, false)
+          }
+        }
+      })
+      setGrid(grid)
+
+    }
+
 
 
     socket.on("connect", onConnect);
@@ -99,7 +129,8 @@ export const SocketManager = () => {
     socket.on("playerMove", onPlayerMove);
     socket.on("playerPivot", onPlayerPivot);
     socket.on("playerAttack", onPlayerAttack);
-    socket.on("serverUpdate", onServerUpdate);
+    socket.on("updateAllMap", onItemUpdate);
+
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
@@ -107,7 +138,8 @@ export const SocketManager = () => {
       socket.off("characters", onCharacters);
       socket.off("playerMove", onPlayerMove);
       socket.off("playerPivot", onPlayerPivot);
-      socket.off("serverUpdate", onServerUpdate);
+
+      socket.off("updateAllMap", onItemUpdate);
     };
   }, []);
 };
