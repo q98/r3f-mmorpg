@@ -5,22 +5,33 @@ import { useAtom } from "jotai";
 import { useState, useEffect, useRef } from "react";
 
 import { Item } from "./Item";
-import { charactersAtom, gridAtom, mapAtom, socket, userAtom } from "./SocketManager";
+import { charactersAtom, gridAtom, gridsAtom, mapAtom, mapsAtom, socket, userAtom } from "./SocketManager";
 import { useGrid } from '../hooks/useGrid'
 import { useFrame } from "@react-three/fiber";
 import { Avatar } from "./Avatar";
+
+const getPlayerMapId = (playerId) => {
+  characters.find((character) => {
+    if (character.id === playerId) {
+      return character.mapId
+    }
+  })
+}
+
 
 
 export const Experience = () => {
 
   const controls = useRef();
   const [characters] = useAtom(charactersAtom);
+  const [grids] = useAtom(gridsAtom)
   const [grid] = useAtom(gridAtom)
   const [map] = useAtom(mapAtom);
+  const [maps] = useAtom(mapsAtom);
 
   //to identify if we are in a map clickable area
   const [onFloor, setOnFloor] = useState(false);
-  const { vector3ToGrid, gridToVector3 } = useGrid();
+  const { vector3ToGrid, grid3DToVector3, vector3ToGrid3D } = useGrid();
   const scene = useThree((state) => state.scene)
   const [user] = useAtom(userAtom)
 
@@ -32,28 +43,56 @@ export const Experience = () => {
   const forwardPressed = useKeyboardControls((state) => state[Controls.forward])
   const holdPressed = useKeyboardControls((state) => state[Controls.hold])
 
-
+  const getMapIndex = (mapId) => {
+    for (let i = 0; i < maps.length; i++) {
+      if (maps[i].mapId === mapId) {
+        //console.log(`${mapId} index: ${i}`)
+        return i
+      }
+    }
+    return null
+  }
   const handldeKeyBoardMove = (forwardPressed = false, leftPressed = false, rightPressed = false, backPressed = false) => {
     let x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
     let z = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
-    const character = scene.getObjectByName(`character-${user}`)
-    const checkPosition = vector3ToGrid(character.position, x, z)
-    if (!grid.isWalkableAt(checkPosition[0], checkPosition[1])) return
-    if (isBusy(vector3ToGrid(character.position, x, z))) return
-    if (!character) return
+    const characterScene = scene.getObjectByName(`character-${user}`)
+    const character = characters.find((character) => {
+      return (character.id === user)
+    })
+    //console.log("mapID -->" + getMapIndex(character.mapId))
+    //console.log(character.mapId)
+    //console.log("handldeKeyBoardMove - showing mapId: " + character.mapId)
+
+    const checkPosition = vector3ToGrid(characterScene.position, x, z)
+    //console.log(checkPosition)
+    if (!grids[getMapIndex(character.mapId)].isWalkableAt(checkPosition[0], checkPosition[1])) return
+    if (isBusy(vector3ToGrid(characterScene.position, x, z))) return
+    if (!characterScene) return
+
     socket.emit("move",
-      vector3ToGrid(character.position),
-      vector3ToGrid(character.position, x, z)
+      vector3ToGrid3D(characterScene.position, characterScene.mapId),
+      vector3ToGrid3D(characterScene.position, characterScene.mapId, x, z)
+      //vector3ToGrid(characterScene.position),
+      //vector3ToGrid(characterScene.position, x, z)
     )
   }
   const onCharacterMove = (e) => {
-    const character = scene.getObjectByName(`character-${user}`)
+    if (holdPressed) return
+    const characterScene = scene.getObjectByName(`character-${user}`)
     //console.log(character)
-    if (!character) return
+    if (!characterScene) return
+    //console.log(user)
+    //console.log(characterScene)
+    //console.log("ClickMove - showing mapId: " + characterScene.mapId)
+    console.log("From vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(characterScene.position, characterScene.mapId))
+    console.log("To vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(e.point, characterScene.mapId))
+    //console.log(vector3ToGrid3D(characterScene.position, characterScene.mapId))
     socket.emit(
       "move",
-      vector3ToGrid(character.position),
-      vector3ToGrid(e.point)
+      vector3ToGrid3D(characterScene.position, characterScene.mapId),
+      vector3ToGrid3D(e.point, characterScene.mapId)
+      //vector3ToGrid(characterScene.position),
+      //vector3ToGrid(e.point)
     )
   }
 
@@ -70,7 +109,8 @@ export const Experience = () => {
   //this function is used at the Avatar during the PathFinder and here because of KeyBoardMoves
   const isBusy = (targetPositionGrid) => {
     return characters.find((character) => {
-      const charPosition = vector3ToGrid(scene.getObjectByName(`character-${character.id}`).position)
+      const charPosition = vector3ToGrid3D(scene.getObjectByName(`character-${character.id}`).position, character.mapId)
+      //const charPosition = vector3ToGrid(scene.getObjectByName(`character-${character.id}`).position)
       return (charPosition[0] === targetPositionGrid[0] && charPosition[1] === targetPositionGrid[1])
     })
   }
@@ -115,7 +155,10 @@ export const Experience = () => {
         handlePivot(getOrientation(forwardPressed, leftPressed, rightPressed, backPressed))
       } else {
         const character = scene.getObjectByName(`character-${user}`)
-        if (character.path[0]?.length && character.position.distanceTo(gridToVector3(character.path[0])) > 0.40 || character.path[0] === undefined) {
+        //console.log("grid3DToVector: ")
+        //console.log(grid3DToVector3(character.path[0], character.mapId))
+        // console.log(grid3DToVector3(character.path[0], character.mapId))
+        if (character.path[0]?.length && character.position.distanceTo(grid3DToVector3(character.path[0], character.mapId)) > 0.40 || character.path[0] === undefined) {
           handldeKeyBoardMove(forwardPressed, leftPressed, rightPressed, backPressed)
         }
       }
@@ -149,6 +192,7 @@ export const Experience = () => {
     controls.current.setPosition(0, 8, 2);
     controls.current.setTarget(0, 8, 0);
 
+
   }, []);
 
   return (
@@ -157,21 +201,40 @@ export const Experience = () => {
       <ambientLight intensity={0.3} />
       <OrbitControls />
 
-      {map.items.map((item, idx) => (
-        <Item key={`${item.name}-${idx}`} item={item} />
-      ))}
       <mesh
         rotation-x={-Math.PI / 2}
-        position-y={-0.002}
+        position-y={maps[1].initPosition[1]}
+
+        onClick={onCharacterMove}
+        onPointerEnter={() => setOnFloor(true)}
+        onPointerLeave={() => setOnFloor(false)}
+        position-x={maps[1].initPosition[0] + maps[1].size[0] / 2}
+        position-z={maps[1].initPosition[2] + maps[1].size[1] / 2}
+      >
+        <planeGeometry args={maps[1].size} />
+        <meshStandardMaterial color="#bc6b4f" />
+      </mesh>
+      {maps[1].items.map((item, idx) => (
+        <Item mapId={maps[1].mapId} mapInitPosition={maps[1].initPosition} key={`${item.name}-${idx}`} item={item} />
+      ))}
+
+
+      <mesh
+        rotation-x={-Math.PI / 2}
+        position-y={maps[0].initPosition[1]}
         onClick={onCharacterMove}
         // onPointerEnter={() => setOnFloor(true)}
         // onPointerLeave={() => setOnFloor(false)}
-        position-x={map.size[0] / 2}
-        position-z={map.size[1] / 2}
+        position-x={maps[0].initPosition[0] + maps[0].size[0] / 2}
+        position-z={maps[0].initPosition[2] + maps[0].size[1] / 2}
       >
-        <planeGeometry args={map.size} />
+        <planeGeometry args={maps[0].size} />
         <meshStandardMaterial color="#f0f0aa" />
       </mesh>
+      {map.items.map((item, idx) => (
+        <Item mapId={maps[0].mapId} mapInitPosition={maps[0].initPosition} key={`${item.name}-${idx}`} item={item} />
+      ))}
+
       <CameraControls
         ref={controls}
         // disable all mouse buttons
@@ -188,17 +251,20 @@ export const Experience = () => {
           three: 0,
         }}
       />
-      <Grid infiniteGrid fadeDistance={50} fadeStrength={5} />
+      {/* <Grid infiniteGrid fadeDistance={50} fadeStrength={5} /> */}
       {characters.map((character) => (
         <Avatar
+          onClick={() => { console.log(`${character.name} level ${character.level}`) }}
           attack={character.attack}
           key={`char-${character.id}`}
           id={character.id}
-          position={gridToVector3(character.position)}
+          position={grid3DToVector3(character.position, character.mapId)}
           charname={character.name}
           path={character.path}
           avatarUrl="/models/Knight.glb"
           orientation={character.orientation}
+          mapId={character.mapId}
+          mapInitPosition={maps[getMapIndex(character.mapId)].initPosition}
 
         />
       ))}

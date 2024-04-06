@@ -9,6 +9,7 @@ import { charactersAtom, userAtom } from "./SocketManager";
 import { useThree } from "@react-three/fiber";
 
 
+
 const MOVEMENT_SPEED = 2;
 
 const WEAPONS = [
@@ -102,22 +103,23 @@ const ANIMATION_OTHERS = [
     "Walking_C"
 ]
 
-
-
 export function Avatar({
     weapon = "1H_Sword",
     id,
     charname,
     avatarUrl = "/models/Knight.glb",
+    mapId,
+    mapInitPosition,
     ...props
 }) {
+    console.log("Avatar at the: " + mapId)
     const group = useRef();
     //!!!clarify
     const position = useMemo(() => props.position, []);
     const [characters] = useAtom(charactersAtom);
     const mainScene = useThree((state) => state.scene)
     const [path, setPath] = useState();
-    const { vector3ToGrid, gridToVector3 } = useGrid();
+    const { vector3ToGrid, grid3DToVector3 } = useGrid();
     const { scene, materials, animations } = useGLTF(avatarUrl);
     // Skinned meshes cannot be re-used in threejs without cloning them
     const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
@@ -142,9 +144,10 @@ export function Avatar({
     useEffect(() => {
         const vectorPath = [];
         props.path?.forEach((gridPosition) => {
-            vectorPath.push(gridToVector3(gridPosition));
+            vectorPath.push(grid3DToVector3(gridPosition, mapId));
         });
         setPath(vectorPath);
+        //console.log("Path Changes - showing mapId: " + mapId)
     }, [props.path]);
 
     //Animation in action fadein fadeOut
@@ -154,6 +157,7 @@ export function Avatar({
     }, [animation]);
 
     const isBusy = (targetPositionVector) => {
+        //console.log("isBusy - showing mapId: " + mapId)
         const targetPositionGrid = vector3ToGrid(targetPositionVector)
         return characters.find((character) => {
             const charPosition = vector3ToGrid(mainScene.getObjectByName(`character-${character.id}`).position)
@@ -162,9 +166,11 @@ export function Avatar({
     }
     //this is used to do the Avatar lookAt(vector, orientation)
     //orientation is a code from 1 to 10 that identified the oritentation we want
-    const getOrientationPosition = (position, orientation) => {
+    const getOrientationPosition = (position, orientation, mapId) => {
         let x = 0
         let z = 0
+
+
         //forward = 1
         //forward+left = 3
         //forward+right= 5
@@ -173,19 +179,22 @@ export function Avatar({
         //back=6
         //back+left=8
         //back+right=10
+        console.log(mapInitPosition[1])
         if (orientation === 1 || orientation === 3 || orientation === 5) {
-            x = -10
+            x -= 10
         }
         if (orientation === 3 || orientation === 2 || orientation === 8) {
-            z = 10
+            z += 10
         }
         if (orientation === 4 || orientation === 5 || orientation === 10) {
-            z = -10
+            z -= 10
         }
         if (orientation === 6 || orientation === 8 || orientation === 10) {
-            x = 10
+            x += 10
         }
-        return [position[0] + x, position[1] + z, 0]
+        x -= mapInitPosition[0] * 2
+        z -= mapInitPosition[2] * 2
+        return [position[0] + x, position[1] + z, mapInitPosition[1]]
     }
 
     //place the animation in case props.attack changes and it's not null
@@ -193,10 +202,13 @@ export function Avatar({
         if (props.attack != null) {
             setAnimation("1H_Melee_Attack_Slice_Horizontal")
         }
+        console.log(mapId)
     }, [props.attack]);
     //
     useEffect(() => {
-        group.current.lookAt(gridToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation)));
+        console.log("Orientation Change - showing mapId: " + mapId)
+        console.log(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId))
+        group.current.lookAt(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId));
     }, [props.orientation]);
 
     useFrame((state, delta) => {
@@ -240,6 +252,7 @@ export function Avatar({
             position={position}
             // dispose={null}
             name={`character-${id}`}
+            mapId={mapId}
             scale={[0.5, 0.5, 0.5]}
 
         >

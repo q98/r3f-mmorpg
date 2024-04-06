@@ -11,6 +11,10 @@ io.listen(3001);
 const dynamicItems = []
 const characters = [];
 const items = {
+  stairs_Wood_Decorated: {
+    name: "Stairs_Wood_Decorated3",
+    size: [4, 6],
+  },
   vela_5: {
     name: "Vela_5",
     size: [1, 1],
@@ -202,11 +206,34 @@ const items = {
     size: [6, 8]
   },
 }
-
-const map = {
-  size: [21, 14],
+const map2 = {
+  mapId: "roof",
+  initPosition: [13, 2, 12],
+  size: [2, 3],
   gridDivision: 2,
   items: [
+    {
+      ...items.bone_3,
+      gridPosition: [0, 0],
+    },
+    {
+      ...items.bone_2,
+      gridPosition: [1, 1],
+    }
+  ]
+}
+const map = {
+  mapId: "level-0",
+  initPosition: [0, -0.002, 0],
+  size: [21, 20],
+  gridDivision: 2,
+  items: [
+    {
+
+      ...items.stairs_Wood_Decorated,
+      gridPosition: [20, 25],
+      rotation: 3
+    },
     {
       ...items.three_Death_3,
       gridPosition: [4, 10],
@@ -624,51 +651,113 @@ const map = {
 
   ]
 }
-
-
-
+const maps = [map, map2]
+//console.log(maps[1])
 const grid = new pathfinding.Grid(map.size[0] * map.gridDivision, map.size[1] * map.gridDivision)
+const grid2 = new pathfinding.Grid(map2.size[0] * map2.gridDivision, map2.size[1] * map2.gridDivision)
+const grids = [grid, grid2]
 
 const finder = new pathfinding.AStarFinder({
   allowDiagonal: true,
   dontCrossCorners: true
 })
 
-const findPath = (start, end) => {
-  const gridClone = grid.clone()
+const getMapIndex = (mapId) => {
+  for (let i = 0; i < maps.length; i++) {
+    if (maps[i].mapId === mapId) {
+      //console.log(`${mapId} index: ${i}`)
+      return i
+    }
+  }
+  return null
+}
+
+const findPath = (start, end, mapId) => {
+  const mapIndex = getMapIndex(mapId)
+  const gridClone = grids[mapIndex].clone()
   const path = finder.findPath(start[0], start[1], end[0], end[1], gridClone)
   return path
+  // if (map === "level-0") {
+  //   const gridClone = grid.clone()
+  //   const path = finder.findPath(start[0], start[1], end[0], end[1], gridClone)
+  //   return path
+  // } else if (map === "roof") {
+  //   const gridClone = grid2.clone()
+  //   const path = finder.findPath(start[0], start[1], end[0], end[1], gridClone)
+  //   return path
+  // }
+  // return null
+
 }
+const updateGrids = () => {
+  for (let i = 0; i < maps.length; i++) {
+    maps[i].items.forEach((item) => {
+      if (item.walkable || item.wall) return
 
-const updateGrid = () => {
-  map.items.forEach((item) => {
-    if (item.walkable || item.wall) return
-
-    // const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0]
-    // const height = !item.rotation === 1 || !item.rotation === 3 ? item.size[0] : item.size[1]
-    const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0];
-    const height = item.rotation === 1 || item.rotation === 3 ? item.size[0] : item.size[1];
-    for (let w = 0; w < width; w++) {
-      for (let h = 0; h < height; h++) {
-        grid.setWalkableAt(
-          item.gridPosition[0] + w,
-          item.gridPosition[1] + h,
-          false
-        )
-
+      const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0];
+      const height = item.rotation === 1 || item.rotation === 3 ? item.size[0] : item.size[1];
+      for (let w = 0; w < width; w++) {
+        for (let h = 0; h < height; h++) {
+          grids[i].setWalkableAt(
+            item.gridPosition[0] + w,
+            item.gridPosition[1] + h,
+            false
+          )
+        }
       }
-    }
-    // if (item.name === "Gate_Valla_2") console.log("Gate_Valla_2 set Walkable?" + item.walkable)
-  })
-}
+    })
+  }
 
-updateGrid()
+}
+// const updateGrid = () => {
+//   map.items.forEach((item) => {
+//     if (item.walkable || item.wall) return
+
+//     const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0];
+//     const height = item.rotation === 1 || item.rotation === 3 ? item.size[0] : item.size[1];
+//     for (let w = 0; w < width; w++) {
+//       for (let h = 0; h < height; h++) {
+//         grid.setWalkableAt(
+//           item.gridPosition[0] + w,
+//           item.gridPosition[1] + h,
+//           false
+//         )
+
+//       }
+//     }
+//   })
+// }
+// const updateGrid2 = () => {
+//   map2.items.forEach((item) => {
+//     if (item.walkable || item.wall) return
+
+//     const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0];
+//     const height = item.rotation === 1 || item.rotation === 3 ? item.size[0] : item.size[1];
+//     for (let w = 0; w < width; w++) {
+//       for (let h = 0; h < height; h++) {
+//         grid.setWalkableAt(
+//           item.gridPosition[0] + w,
+//           item.gridPosition[1] + h,
+//           false
+//         )
+//       }
+//     }
+//   })
+// }
+
+// updateGrid()
+// updateGrid2()
+updateGrids()
 //console.log(findPath([1, 0], [1, 5]))
-const isInsideMap = (gridPosition) => {
-  return gridPosition[0] / map.gridDivision >= 0 && gridPosition[0] / map.gridDivision <= map.size[0] - 0.5 && gridPosition[1] / map.gridDivision >= 0 && gridPosition[1] / map.gridDivision <= map.size[1] - 0.5
+const isInsideMap = (gridPosition, mapId = "level-0") => {
+  const mapIndex = getMapIndex(mapId)
+  //console.log(mapIndex)
+  // return gridPosition[0] / map.gridDivision >= 0 && gridPosition[0] / map.gridDivision <= map.size[0] - 0.5 && gridPosition[1] / map.gridDivision >= 0 && gridPosition[1] / map.gridDivision <= map.size[1] - 0.5
+  return gridPosition[0] / maps[mapIndex].gridDivision >= 0 && gridPosition[0] / maps[mapIndex].gridDivision <= maps[mapIndex].size[0] - 0.5 && gridPosition[1] / maps[mapIndex].gridDivision >= 0 && gridPosition[1] / maps[mapIndex].gridDivision <= maps[mapIndex].size[1] - 0.5
 }
 const generateRandomPosition = () => {
-  return [30, 27];
+  //return [18, 25];
+  return [0, 1];
   // for (let i = 0; i < 100; i++) {
   //   const x = Math.floor(Math.random() * map.size[0] * map.gridDivision)
   //   const y = Math.floor(Math.random() * map.size[1] * map.gridDivision)
@@ -722,11 +811,15 @@ io.on("connection", (socket) => {
     id: socket.id,
     orientation: 8,
     position: generateRandomPosition(),
+    //mapId: "level-0",
+    mapId: "roof",
+    level: 1
   });
   console.log(characters)
 
   socket.emit("hello", {
     map,
+    maps,
     characters,
     id: socket.id,
     items,
@@ -754,7 +847,6 @@ io.on("connection", (socket) => {
         }
       }
       io.emit("updateAllMap", map);
-
     }
 
 
@@ -763,14 +855,17 @@ io.on("connection", (socket) => {
   });
   //Moving a player from A to B
   socket.on("move", (from, to) => {
-    // console.log("ask for movement")
+    console.log("ask for movement")
+    console.log(from)
+    console.log(to)
     const character = characters.find(
       (character) => character.id === socket.id
     );
-    if (!isInsideMap(to)) return
-    if (!grid.isWalkableAt(to[0], to[1])) return
 
-    const path = findPath(from, to);
+    if (!isInsideMap(to, character.mapId)) return
+    if (!grids[getMapIndex(character.mapId)].isWalkableAt(to[0], to[1])) return
+
+    const path = findPath(from, to, character.mapId);
     if (!path) {
       return;
     }

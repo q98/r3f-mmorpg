@@ -12,8 +12,7 @@ export const Controls = {
   left: "left",
   right: "right",
   attack: "attack",
-  hold: "hold",
-  o: "o"
+  hold: "hold"
 }
 
 function App() {
