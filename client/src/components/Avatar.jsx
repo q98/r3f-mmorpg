@@ -112,13 +112,14 @@ export function Avatar({
     mapInitPosition,
     ...props
 }) {
-    console.log("Avatar at the: " + mapId)
+    //console.log("Avatar at the: " + mapId)
     const group = useRef();
     //!!!clarify
     const position = useMemo(() => props.position, []);
     const [characters] = useAtom(charactersAtom);
     const mainScene = useThree((state) => state.scene)
     const [path, setPath] = useState();
+    const [teleport, setTeleport] = useState(false)
     const { vector3ToGrid, grid3DToVector3 } = useGrid();
     const { scene, materials, animations } = useGLTF(avatarUrl);
     // Skinned meshes cannot be re-used in threejs without cloning them
@@ -128,6 +129,7 @@ export function Avatar({
     const { actions } = useAnimations(animations, group);
     const [animation, setAnimation] = useState("Idle");
     const [user] = useAtom(userAtom);
+
 
     //Set the model preferences
     useEffect(() => {
@@ -149,6 +151,10 @@ export function Avatar({
         setPath(vectorPath);
         //console.log("Path Changes - showing mapId: " + mapId)
     }, [props.path]);
+
+    useEffect(() => {
+        setTeleport(props.teleport);
+    }, [props.teleport]);
 
     //Animation in action fadein fadeOut
     useEffect(() => {
@@ -179,7 +185,7 @@ export function Avatar({
         //back=6
         //back+left=8
         //back+right=10
-        console.log(mapInitPosition[1])
+        //console.log(mapInitPosition[1])
         if (orientation === 1 || orientation === 3 || orientation === 5) {
             x -= 10
         }
@@ -202,17 +208,43 @@ export function Avatar({
         if (props.attack != null) {
             setAnimation("1H_Melee_Attack_Slice_Horizontal")
         }
-        console.log(mapId)
+        //console.log(mapId)
     }, [props.attack]);
+
+    // useEffect(() => {
+    //     if (path?.length) {
+    //         console.log(mapInitPosition)
+    //         group.current.position.z = path[0].z
+    //         group.current.position.x = path[0].x
+    //         group.current.position.y = mapInitPosition[1]
+    //         console.log(props.orientation)
+    //         //group.current.lookAt(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId));
+    //         path.shift();
+    //         console.log(path)
+    //     }
+
+    // }, [props.teleport]);
     //
     useEffect(() => {
-        console.log("Orientation Change - showing mapId: " + mapId)
-        console.log(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId))
+        //console.log("Orientation Change - showing mapId: " + mapId)
+        //console.log(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId))
         group.current.lookAt(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId));
     }, [props.orientation]);
 
     useFrame((state, delta) => {
-
+        // if (props.teleport && path?.length) {
+        if (teleport && path?.length) {
+            console.log(mapInitPosition)
+            group.current.position.z = path[0].z
+            group.current.position.x = path[0].x
+            group.current.position.y = mapInitPosition[1]
+            console.log(props.orientation)
+            group.current.lookAt(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId));
+            path.shift();
+            console.log("isteleport!!")
+            console.log(path)
+            setTeleport(false)
+        }
         if (props.attack?.length && props.attack != null) {
             setTimeout(function () {
                 props.attack.shift();
@@ -238,6 +270,8 @@ export function Avatar({
                 group.current.position.z = path[0].z
                 group.current.position.x = path[0].x
                 group.current.position.y = path[0].y
+                //group.current.lookAt(grid3DToVector3(getOrientationPosition(vector3ToGrid(group.current.position), props.orientation), mapId));
+
                 path.shift();
             }
         } else {

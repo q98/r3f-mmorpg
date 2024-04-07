@@ -77,16 +77,21 @@ export const Experience = () => {
     )
   }
   const onCharacterMove = (e) => {
+
     if (holdPressed) return
     const characterScene = scene.getObjectByName(`character-${user}`)
     //console.log(character)
     if (!characterScene) return
+    if (characterScene.mapId)
+
+      if (e.object.mapId != characterScene.mapId) return
     //console.log(user)
     //console.log(characterScene)
     //console.log("ClickMove - showing mapId: " + characterScene.mapId)
-    console.log("From vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(characterScene.position, characterScene.mapId))
-    console.log("To vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(e.point, characterScene.mapId))
-    //console.log(vector3ToGrid3D(characterScene.position, characterScene.mapId))
+    //console.log("From vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(characterScene.position, characterScene.mapId))
+    //console.log("To vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(e.point, characterScene.mapId))
+    console.log(e)
+    //console.log(vector3ToGrid3D(e.point, characterScene.mapId))
     socket.emit(
       "move",
       vector3ToGrid3D(characterScene.position, characterScene.mapId),
@@ -96,7 +101,12 @@ export const Experience = () => {
     )
   }
 
-  const onCharacterAttack = () => {
+  const onCharacterAttack = (event) => {
+    if (event.stopPropagation) {
+      event.stopPropagation();   // W3C model
+    } else {
+      event.cancelBubble = true; // IE model
+    }
     const character = scene.getObjectByName(`character-${user}`)
     character.attack = "attack"
     if (!character) return
@@ -158,6 +168,8 @@ export const Experience = () => {
         //console.log("grid3DToVector: ")
         //console.log(grid3DToVector3(character.path[0], character.mapId))
         // console.log(grid3DToVector3(character.path[0], character.mapId))
+        //if (character.path[0]?.length && character.position.distanceTo(grid3DToVector3(character.path[0], character.mapId)) > 0.40 || character.path[0] === undefined) {
+
         if (character.path[0]?.length && character.position.distanceTo(grid3DToVector3(character.path[0], character.mapId)) > 0.40 || character.path[0] === undefined) {
           handldeKeyBoardMove(forwardPressed, leftPressed, rightPressed, backPressed)
         }
@@ -175,7 +187,7 @@ export const Experience = () => {
     }
     controls.current.setTarget(
       character.position.x,
-      0,
+      maps[getMapIndex(character.mapId)].initPosition[1],
       character.position.z,
       true
     );
@@ -202,10 +214,11 @@ export const Experience = () => {
       <OrbitControls />
 
       <mesh
+        mapId="roof"
         rotation-x={-Math.PI / 2}
         position-y={maps[1].initPosition[1]}
-
-        onClick={onCharacterMove}
+        //onClick={(e) => console.log('click')}
+        onClick={(e) => onCharacterMove(e)}
         onPointerEnter={() => setOnFloor(true)}
         onPointerLeave={() => setOnFloor(false)}
         position-x={maps[1].initPosition[0] + maps[1].size[0] / 2}
@@ -220,9 +233,10 @@ export const Experience = () => {
 
 
       <mesh
+        mapId="level-0"
         rotation-x={-Math.PI / 2}
         position-y={maps[0].initPosition[1]}
-        onClick={onCharacterMove}
+        onClick={(e) => onCharacterMove(e)}
         // onPointerEnter={() => setOnFloor(true)}
         // onPointerLeave={() => setOnFloor(false)}
         position-x={maps[0].initPosition[0] + maps[0].size[0] / 2}
@@ -254,6 +268,7 @@ export const Experience = () => {
       {/* <Grid infiniteGrid fadeDistance={50} fadeStrength={5} /> */}
       {characters.map((character) => (
         <Avatar
+          teleport={character.teleport}
           onClick={() => { console.log(`${character.name} level ${character.level}`) }}
           attack={character.attack}
           key={`char-${character.id}`}

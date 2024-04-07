@@ -231,8 +231,15 @@ const map = {
     {
 
       ...items.stairs_Wood_Decorated,
+
       gridPosition: [20, 25],
-      rotation: 3
+      rotation: 3,
+      teleportId: "teleport0001",
+      type: "teleport",
+      originMapId: ["level-0", "roof"],
+      targetMapId: ["roof", "level-0"],
+      destination: [[[0, 2], [0, 3], [0, 4]], [[19, 27], [20, 16], [20, 17]]],
+      targetOrientation: [6, 1]
     },
     {
       ...items.three_Death_3,
@@ -755,9 +762,9 @@ const isInsideMap = (gridPosition, mapId = "level-0") => {
   // return gridPosition[0] / map.gridDivision >= 0 && gridPosition[0] / map.gridDivision <= map.size[0] - 0.5 && gridPosition[1] / map.gridDivision >= 0 && gridPosition[1] / map.gridDivision <= map.size[1] - 0.5
   return gridPosition[0] / maps[mapIndex].gridDivision >= 0 && gridPosition[0] / maps[mapIndex].gridDivision <= maps[mapIndex].size[0] - 0.5 && gridPosition[1] / maps[mapIndex].gridDivision >= 0 && gridPosition[1] / maps[mapIndex].gridDivision <= maps[mapIndex].size[1] - 0.5
 }
-const generateRandomPosition = () => {
-  //return [18, 25];
-  return [0, 1];
+const generateRandomPosition = (position = [28, 22]) => {
+  return position;
+  //return [0, 1];
   // for (let i = 0; i < 100; i++) {
   //   const x = Math.floor(Math.random() * map.size[0] * map.gridDivision)
   //   const y = Math.floor(Math.random() * map.size[1] * map.gridDivision)
@@ -810,10 +817,11 @@ io.on("connection", (socket) => {
     name: socket.id.substring(0, 5),
     id: socket.id,
     orientation: 8,
-    position: generateRandomPosition(),
+    position: generateRandomPosition([0, 0]),
     //mapId: "level-0",
     mapId: "roof",
-    level: 1
+    level: 1,
+    path: []
   });
   console.log(characters)
 
@@ -829,30 +837,62 @@ io.on("connection", (socket) => {
 
   socket.on("actionDoor", (objectId, openStatus) => {
 
-    const item = map.items.find(
-      (item) => item.id === objectId
-    );
+
     const character = characters.find(
       (character) => character.id === socket.id
     );
-
+    const mapIndex = getMapIndex(character.mapId)
+    const item = maps[mapIndex].items.find(
+      (item) => item.id === objectId
+    );
     if (distanceToAnItem(character.position, item) <= 1) {
       item.open = openStatus
       item.walkable = openStatus
+
       const width = item.rotation === 1 || item.rotation === 3 ? item.size[1] : item.size[0]
       const height = !item.rotation === 1 || !item.rotation === 3 ? item.size[0] : item.size[1]
       for (let w = 0; w < width; w++) {
         for (let h = 0; h < height; h++) {
-          grid.setWalkableAt(item.gridPosition[0] + w, item.gridPosition[1] + h, openStatus)
+          //grid.setWalkableAt(item.gridPosition[0] + w, item.gridPosition[1] + h, openStatus)
+          grids[mapIndex].setWalkableAt(item.gridPosition[0] + w, item.gridPosition[1] + h, openStatus)
         }
       }
       io.emit("updateAllMap", map);
     }
+  });
+  socket.on("teleport", (itemParam) => {
 
+    const character = characters.find(
+      (character) => character.id === socket.id
+    );
+    const mapIndex = getMapIndex(character.mapId)
+    const item = maps[mapIndex].items.find(
+      (item) => item.id === itemParam.id
+    );
 
+    if (item === null) return
+    console.log(itemParam)
+    const teleportIndex = itemParam.originMapId.indexOf(character.mapId)
+    console.log(teleportIndex)
+    // //console.log("teleport received: " + teleportIndex)
 
+    character.mapId = itemParam.targetMapId[teleportIndex]
+    character.orientation = itemParam.targetOrientation[teleportIndex]
+
+    character.teleport = true
+    console.log(itemParam.destination[teleportIndex][0])
+
+    character.path = [itemParam.destination[teleportIndex][0]]
+    console.log(character)
+    character.position = itemParam.destination[teleportIndex][0]
+    character.attack = null
+    io.emit("playerTeleport", character);
+    character.path = []
+    character.teleport = false
+    character.position = itemParam.destination[teleportIndex][0]
 
   });
+
   //Moving a player from A to B
   socket.on("move", (from, to) => {
     console.log("ask for movement")
@@ -881,19 +921,14 @@ io.on("connection", (socket) => {
 
   });
 
-
   socket.on("attack", (orientation) => {
-
     const character = characters.find(
       (character) => character.id === socket.id
     );
-    //console.log(`${character.name} is atacking to ${orientation}`)
     character.attack = ["attack"]
     character.path = []
-    //io.emit("characters", characters);
     io.emit("playerAttack", character);
     character.attack = null
-
   });
 
 
@@ -918,18 +953,6 @@ io.on("connection", (socket) => {
     io.emit("characters", characters);
   });
 
-  // socket.on("serverUpdate", (position) => {
-  //   // console.log("ask for movement")
-  //   const character = characters.find(
-  //     (character) => character.id === socket.id
-  //   );
-  //   //console.log("serverUpdate" + character.id)
-
-  //   character.path = []
-  //   character.position = position
-  //   //console.log("At" + character.position)
-
-  // });
 
 });
 

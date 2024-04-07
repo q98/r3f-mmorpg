@@ -100,17 +100,22 @@ export const SocketManager = () => {
         })
       })
     }
-    // function onServerUpdate(value) {
-    //   setCharacters((prev) => {
-    //     return prev.map((character) => {
-    //       if (character.id === value.id) {
-    //         return value
-    //       } else {
-    //         return character
-    //       }
-    //     })
-    //   })
-    // }
+    function onPlayerTeleport(value) {
+      //console.log("received Player Move")
+      //console.log(value)
+      setCharacters((prev) => {
+        return prev.map((character) => {
+          if (character.id === value.id) {
+
+            return value
+          } else {
+
+            return character
+          }
+        })
+      })
+    }
+
     function onPlayerAttack(value) {
       //console.log(`receiving a ${value.name} atacking`)
       setCharacters((prev) => {
@@ -180,6 +185,7 @@ export const SocketManager = () => {
     socket.on("playerPivot", onPlayerPivot);
     socket.on("playerAttack", onPlayerAttack);
     socket.on("updateAllMap", onItemUpdate);
+    socket.on("playerTeleport", onPlayerTeleport);
 
     return () => {
       socket.off("connect", onConnect);
@@ -188,8 +194,9 @@ export const SocketManager = () => {
       socket.off("characters", onCharacters);
       socket.off("playerMove", onPlayerMove);
       socket.off("playerPivot", onPlayerPivot);
-
+      socket.off("playerAttack", onPlayerAttack);
       socket.off("updateAllMap", onItemUpdate);
+      socket.off("playerTeleport", onPlayerTeleport);
     };
   }, []);
 };
