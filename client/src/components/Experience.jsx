@@ -57,21 +57,39 @@ export const Experience = () => {
 
 
   const handldeKeyBoardMove = (forwardPressed = false, leftPressed = false, rightPressed = false, backPressed = false) => {
-    let x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
-    let z = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
     const characterScene = scene.getObjectByName(`character-${user}`)
+    let x = 0
+    let z = 0
+    const varX = controls.current._camera.position.x - characterScene.position.x
+    const varZ = controls.current._camera.position.z - characterScene.position.z
+    if (varX >= 2) {
+      if (varZ > -3 && varZ < 4) {
+        x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
+        z = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
+      }
+    } else if (varX <= -3) {
+
+      x = forwardPressed ? 1 : 0 + backPressed ? -1 : 0
+      z = leftPressed ? -1 : 0 + rightPressed ? 1 : 0
+    } else {
+      if (varZ <= -3) {
+        x = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
+        z = forwardPressed ? 1 : 0 + backPressed ? -1 : 0
+      } else {
+        x = leftPressed ? -1 : 0 + rightPressed ? 1 : 0
+        z = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
+      }
+    }
+
     const character = characters.find((character) => {
       return (character.id === user)
     })
-    //console.log("mapID -->" + getMapIndex(character.mapId))
-    //console.log(character.mapId)
-    //console.log("handldeKeyBoardMove - showing mapId: " + character.mapId)
-
     const checkPosition = vector3ToGrid(characterScene.position, x, z)
     //console.log(checkPosition)
     if (!grids[getMapIndex(character.mapId)].isWalkableAt(checkPosition[0], checkPosition[1])) return
     if (isBusy(vector3ToGrid(characterScene.position, x, z))) return
     if (!characterScene) return
+
 
     socket.emit("move",
       vector3ToGrid3D(characterScene.position, characterScene.mapId),
@@ -94,7 +112,7 @@ export const Experience = () => {
     //console.log("ClickMove - showing mapId: " + characterScene.mapId)
     //console.log("From vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(characterScene.position, characterScene.mapId))
     //console.log("To vector3ToGrid: " + characterScene.mapId + " -> " + vector3ToGrid3D(e.point, characterScene.mapId))
-    console.log(e)
+    //console.log(e)
     //console.log(vector3ToGrid3D(e.point, characterScene.mapId))
     socket.emit(
       "move",
@@ -182,19 +200,7 @@ export const Experience = () => {
     }
   });
 
-  // useThree(({ camera }) => {
-  //   if (!user) {
-  //     return;
-  //   }
-  //   const character = scene.getObjectByName(`character-${user}`);
-  //   if (!character) {
-  //     return;
-  //   }
-  //   camera.position.z = 8;
-  //   camera.position.x = character.position.x
-  //   camera.position.y = character.position.y
-  //   camera.lookAt(0, 0, 0);
-  // });
+
   // this is just to change camera position following the user's character
   useFrame(({ scene }) => {
     if (!user) {
@@ -226,8 +232,6 @@ export const Experience = () => {
     //INITIAL CAMERA POSITION
     // controls.current.setPosition(0, 8, 2);
     // controls.current.setTarget(0, 8, 0);
-
-
   }, []);
 
   return (
