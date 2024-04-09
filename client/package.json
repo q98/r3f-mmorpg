@@ -14,6 +14,7 @@
     "@types/three": "0.152.1",
     "framer-motion-3d": "^11.0.22",
     "jotai": "^2.2.3",
+    "leva": "^0.9.35",
     "pathfinding": "^0.4.18",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

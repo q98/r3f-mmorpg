@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "./components/Experience";
 import { SocketManager } from "./components/SocketManager";
-import { KeyboardControls } from "@react-three/drei";
+import { KeyboardControls, OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { useMemo } from "react";
 import { Suspense } from "react";
 
@@ -31,7 +31,11 @@ function App() {
     <>
       <SocketManager />
       <KeyboardControls map={keyMap}>
-        <Canvas shadows camera={{ position: [10, 10, 10], fov: 30 }}>
+        {/* camera={{ position: [10, 10, 10], fov: 30 }} */}
+        <Canvas shadows >
+          {/* <Canvas>
+          <PerspectiveCamera position={[0, 0, 50]} makeDefaul={true} aspect={2} />*/}
+          <OrbitControls />
           <color attach="background" args={["#ececec"]} />
           <Suspense fallback={null}>
             <Experience />

@@ -1,4 +1,5 @@
-import { Environment, Grid, OrbitControls, useCursor, useKeyboardControls, CameraControls } from "@react-three/drei";
+import { Environment, Grid, OrbitControls, useCursor, useKeyboardControls, CameraControls, PerspectiveCamera, Stats } from "@react-three/drei";
+import { button, useControls } from 'leva'
 import { Controls } from '../App'
 import { useThree } from "@react-three/fiber";
 import { useAtom } from "jotai";
@@ -52,6 +53,9 @@ export const Experience = () => {
     }
     return null
   }
+
+
+
   const handldeKeyBoardMove = (forwardPressed = false, leftPressed = false, rightPressed = false, backPressed = false) => {
     let x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
     let z = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
@@ -172,11 +176,26 @@ export const Experience = () => {
 
         if (character.path[0]?.length && character.position.distanceTo(grid3DToVector3(character.path[0], character.mapId)) > 0.40 || character.path[0] === undefined) {
           handldeKeyBoardMove(forwardPressed, leftPressed, rightPressed, backPressed)
+
         }
       }
     }
   });
-  //this is just to change camera position following the user's character
+
+  // useThree(({ camera }) => {
+  //   if (!user) {
+  //     return;
+  //   }
+  //   const character = scene.getObjectByName(`character-${user}`);
+  //   if (!character) {
+  //     return;
+  //   }
+  //   camera.position.z = 8;
+  //   camera.position.x = character.position.x
+  //   camera.position.y = character.position.y
+  //   camera.lookAt(0, 0, 0);
+  // });
+  // this is just to change camera position following the user's character
   useFrame(({ scene }) => {
     if (!user) {
       return;
@@ -185,24 +204,28 @@ export const Experience = () => {
     if (!character) {
       return;
     }
+    controls.current.dolly(1, true)
     controls.current.setTarget(
       character.position.x,
       maps[getMapIndex(character.mapId)].initPosition[1],
       character.position.z,
       true
     );
-    controls.current.setPosition(
-      character.position.x + 8,
-      character.position.y + 8,
-      character.position.z + 8,
-      true
-    );
+    //console.log(controls.current._target)
+
+
+    // controls.current.setPosition(
+    //   character.position.x + 8,
+    //   character.position.y + maps[getMapIndex(character.mapId)].initPosition[1] + 8,
+    //   character.position.z + 8,
+    //   true
+    // );
   });
 
   useEffect(() => {
-    // INITIAL CAMERA POSITION
-    controls.current.setPosition(0, 8, 2);
-    controls.current.setTarget(0, 8, 0);
+    //INITIAL CAMERA POSITION
+    // controls.current.setPosition(0, 8, 2);
+    // controls.current.setTarget(0, 8, 0);
 
 
   }, []);
@@ -211,7 +234,10 @@ export const Experience = () => {
     <>
       <Environment preset="sunset" />
       <ambientLight intensity={0.3} />
-      <OrbitControls />
+
+      {/* <PerspectiveCamera max makeDefault={true} aspect={2} /> */}
+      {/* //<OrbitControls enableRotate={false} /> */}
+
 
       <mesh
         mapId="roof"
@@ -250,12 +276,20 @@ export const Experience = () => {
       ))}
 
       <CameraControls
+        infinityDolly={false}
+        maxDistance={7}
+        minDistance={7}
+        maxPolarAngle={Math.PI / 4}
+        minPolarAngle={Math.PI / 4}
+        // minAzimuthAngle={Math.PI}
+        // azimuthAngle={Math.PI * 4}
         ref={controls}
+
         // disable all mouse buttons
         mouseButtons={{
           left: 0,
           middle: 0,
-          right: 0,
+          right: 1,
           wheel: 0,
         }}
         // disable all touch gestures
