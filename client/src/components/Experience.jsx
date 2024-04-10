@@ -11,15 +11,8 @@ import { useGrid } from '../hooks/useGrid'
 import { useFrame } from "@react-three/fiber";
 import { Avatar } from "./Avatar";
 
-const getPlayerMapId = (playerId) => {
-  characters.find((character) => {
-    if (character.id === playerId) {
-      return character.mapId
-    }
-  })
-}
-
-
+export const cameraRatio = 7
+export const cameraRatioStep = cameraRatio / 4
 
 export const Experience = () => {
 
@@ -62,24 +55,81 @@ export const Experience = () => {
     let z = 0
     const varX = controls.current._camera.position.x - characterScene.position.x
     const varZ = controls.current._camera.position.z - characterScene.position.z
-    if (varX >= 2) {
-      if (varZ > -3 && varZ < 4) {
-        x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
-        z = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
-      }
-    } else if (varX <= -3) {
+    // console.log(((cameraRatio / 2) - cameraRatioStep))
+    // console.log(((cameraRatio / 2) - cameraRatioStep))
+    // if (varX >= ((cameraRatio / 2) - cameraRatioStep) && varX <= ((cameraRatio / 2) + cameraRatioStep)) {
+    //   console.log("NW" + varZ)
+    // }
+    if (varX >= (cameraRatio - cameraRatioStep) && varX <= (cameraRatio + cameraRatioStep) && varZ >= (-cameraRatioStep) && varZ < cameraRatioStep) {
+      console.log("N")
+      x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
+      z = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
+      // && varZ >= (-cameraRatio + cameraRatioStep) && varZ <= (-cameraRatioStep)
+    } else if (varX >= ((cameraRatio / 2) - 2 * cameraRatioStep) && varX <= ((cameraRatio / 2) + 2 * cameraRatioStep) && varZ >= ((-cameraRatio / 2) - 2 * cameraRatioStep) && varZ <= ((-cameraRatio / 2) + 2 * cameraRatioStep)) {
+      console.log("NW")
+      x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0 + rightPressed ? -1 : 0 + leftPressed ? 1 : 0
+      z = forwardPressed ? 1 : 0 + backPressed ? -1 : 0 + rightPressed ? -1 : 0 + leftPressed ? 1 : 0
+      if (leftPressed && (forwardPressed || backPressed)) { z++ }
+      if (rightPressed && (forwardPressed || backPressed)) { z-- }
+      //
+    } else if (varX <= ((cameraRatio / 2) + 2 * cameraRatioStep) && varX >= ((cameraRatio / 2) - 2 * cameraRatioStep) && varZ >= ((cameraRatio / 2) - 2 * cameraRatioStep) && varZ <= ((cameraRatio / 2) + 2 * cameraRatioStep)) {
+      console.log("NE")
+      x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0 + rightPressed ? 1 : 0 + leftPressed ? -1 : 0
+      z = forwardPressed ? -1 : 0 + backPressed ? 1 : 0 + rightPressed ? -1 : 0 + leftPressed ? 1 : 0
+      if (leftPressed && (forwardPressed || backPressed)) { z++ }
+      if (rightPressed && (forwardPressed || backPressed)) { z-- }
 
+      // && varZ >= (cameraRatio - 2 * cameraRatioStep) && varZ <= (cameraRatio + 2 * cameraRatioStep)
+    } else if (varX <= ((-cameraRatio / 2) + cameraRatioStep) && varX >= ((-cameraRatio / 2) - cameraRatioStep) && varZ >= ((cameraRatio / 2) - 2 * cameraRatioStep) && varZ <= ((cameraRatio / 2) + 2 * cameraRatioStep)) {
+      console.log("SE")
+      x = forwardPressed ? 1 : 0 + backPressed ? -1 : 0 + rightPressed ? 1 : 0 + leftPressed ? -1 : 0
+      z = forwardPressed ? -1 : 0 + backPressed ? 1 : 0 + rightPressed ? 1 : 0 + leftPressed ? -1 : 0
+      if (leftPressed && (forwardPressed || backPressed)) { z-- }
+      if (rightPressed && (forwardPressed || backPressed)) { z++ }
+      //
+    }
+    else if (varX <= (-cameraRatio + cameraRatioStep) && varX <= (-cameraRatioStep) && varZ <= (cameraRatio - 2 * cameraRatioStep) && varZ > -2 * cameraRatioStep) {
+      console.log("S")
       x = forwardPressed ? 1 : 0 + backPressed ? -1 : 0
       z = leftPressed ? -1 : 0 + rightPressed ? 1 : 0
-    } else {
-      if (varZ <= -3) {
-        x = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
-        z = forwardPressed ? 1 : 0 + backPressed ? -1 : 0
-      } else {
-        x = leftPressed ? -1 : 0 + rightPressed ? 1 : 0
-        z = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
-      }
+    } else if (varX >= (- cameraRatioStep) && varX <= (cameraRatioStep) && varZ <= (cameraRatio - cameraRatioStep)) {
+      console.log("W")
+      x = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
+      z = forwardPressed ? 1 : 0 + backPressed ? -1 : 0
     }
+    else if (varX <= (cameraRatioStep) && varX >= (-cameraRatioStep) && varZ >= (cameraRatio - cameraRatioStep)) {
+      console.log("E")
+      x = leftPressed ? -1 : 0 + rightPressed ? 1 : 0
+      z = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
+      //&& varZ >= (cameraRatio - cameraRatioStep) && varZ <= (cameraRatio + cameraRatioStep)
+    } else if (varX >= ((-cameraRatio / 2) - 2 * cameraRatioStep) && varX <= ((-cameraRatio / 2) + 2 * cameraRatioStep) && varZ <= ((-cameraRatio / 2) + 2 * cameraRatioStep) && varZ >= ((-cameraRatio / 2) - 2 * cameraRatioStep)) {
+      console.log("SW")
+      x = forwardPressed ? 1 : 0 + backPressed ? -1 : 0 + rightPressed ? -1 : 0 + leftPressed ? 1 : 0
+      z = forwardPressed ? 1 : 0 + backPressed ? -1 : 0 + rightPressed ? 1 : 0 + leftPressed ? -1 : 0
+      if (leftPressed && (forwardPressed || backPressed)) { z-- }
+      if (rightPressed && (forwardPressed || backPressed)) { z++ }
+    }
+
+    //&& varZ <= ((cameraRatio) - 2 * cameraRatioStep) && varZ >= ((cameraRatio / 2) - 2 * cameraRatioStep)
+
+
+    //   if (varZ > -3 && varZ < 4) {
+    //     x = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
+    //     z = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
+    //   }
+    // } else if (varX <= -3) {
+
+    //   x = forwardPressed ? 1 : 0 + backPressed ? -1 : 0
+    //   z = leftPressed ? -1 : 0 + rightPressed ? 1 : 0
+    // } else {
+    //   if (varZ <= -3) {
+    //     x = leftPressed ? 1 : 0 + rightPressed ? -1 : 0
+    //     z = forwardPressed ? 1 : 0 + backPressed ? -1 : 0
+    //   } else {
+    //     x = leftPressed ? -1 : 0 + rightPressed ? 1 : 0
+    //     z = forwardPressed ? -1 : 0 + backPressed ? 1 : 0
+    //   }
+    // }
 
     const character = characters.find((character) => {
       return (character.id === user)
@@ -175,7 +225,16 @@ export const Experience = () => {
   }
 
   useFrame((_state, delta) => {
+    if (holdPressed) {
+      const character = scene.getObjectByName(`character-${user}`)
+      const varX = controls.current._camera.position.x - character.position.x
+      const varZ = controls.current._camera.position.z - character.position.z
+      console.log(`X: ${varX}`)
+      console.log(`Z: ${varZ}`)
 
+
+
+    }
     if (attackPressed && !(forwardPressed || leftPressed || rightPressed || backPressed)) {
       const character = scene.getObjectByName(`character-${user}`)
       if (!character.attack?.length) {
@@ -281,8 +340,8 @@ export const Experience = () => {
 
       <CameraControls
         infinityDolly={false}
-        maxDistance={7}
-        minDistance={7}
+        maxDistance={10}
+        minDistance={10}
         maxPolarAngle={Math.PI / 4}
         minPolarAngle={Math.PI / 4}
         // minAzimuthAngle={Math.PI}
